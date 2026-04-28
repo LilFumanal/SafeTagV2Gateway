@@ -40,6 +40,15 @@ public class GatewayConfig {
                 .route(path("/api/v1/reviews/**"), HandlerFunctions.http())
                 .before(BeforeFilterFunctions.uri("http://localhost:8082"))
                 .build();
+
+    }
+    @Bean
+    public RouterFunction<ServerResponse> moderationServiceRoute() {
+        return GatewayRouterFunctions.route("moderation-service")
+                .route(path("/api/v1/moderation/reviews"), HandlerFunctions.http())
+                .before(BeforeFilterFunctions.uri("http://localhost:8083"))
+                .build();
+
     }
 
 
