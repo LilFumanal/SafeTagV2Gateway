@@ -33,15 +33,26 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         String token = authHeader.substring(7);
+        io.jsonwebtoken.Claims claims;
         try {
-            jwtUtil.validateToken(token);
+            claims = jwtUtil.getClaims(token);
         } catch (Exception e) {
             System.err.println("❌ Erreur validation JWT : " + e.getMessage());
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             return;
         }
 
-        // 4. Si tout est OK, on continue vers le microservice
-        filterChain.doFilter(request, response);
+        // 4. Ajout des informations dans les Headers via un Wrapper
+        jakarta.servlet.http.HttpServletRequestWrapper wrappedRequest = new jakarta.servlet.http.HttpServletRequestWrapper(request) {
+            @Override
+            public String getHeader(String name) {
+                if ("X-User-Id".equalsIgnoreCase(name)) return claims.getSubject();
+                if ("X-User-Role".equalsIgnoreCase(name)) return claims.get("role", String.class);
+                return super.getHeader(name);
+            }
+        };
+
+        // 5. On passe la requête modifiée vers les microservices
+        filterChain.doFilter(wrappedRequest, response);
     }
 }

@@ -1,1 +1,14 @@
-spring.application.name=SafeTagV2_gateway_service
+server:
+  port: 8085
+
+spring:
+  application:
+    name: gateway-service
+
+# Optionnel : logs pour voir le routage en action
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+jwt:
+  # Clé secrète (doit faire au moins 256 bits). À terme, elle sera dans une variable d'environnement.
+  secret: ${JWT_SECRET:SuperSecretKeyForLocalDevelopmentOnlyThatIsLongEnough}
