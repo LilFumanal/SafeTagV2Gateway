@@ -1,58 +1,72 @@
 package com.lil.safetagv2gatewayservice;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Component
-public class AuthenticationFilter extends OncePerRequestFilter {
+public class AuthenticationFilter implements GatewayFilter {
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+    private final JwtUtil jwtUtils;
 
-    private final JwtUtil jwtUtil;
-
-    public AuthenticationFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    // Injection de JwtUtils
+    public AuthenticationFilter(JwtUtil jwtUtils) {
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        String path = request.getRequestURI();
-        if (path.contains("/api/v1/auth/login") || (path.contains("api/v1/users/register"))) {
-            filterChain.doFilter(request, response);
-            return;
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        logger.info("➡️ AuthenticationFilter exécute la requête pour le chemin : {}", exchange.getRequest().getURI().getPath());
+        String path = exchange.getRequest().getURI().getPath();
+
+        // Liste des endpoints publics (sans authentification)
+        List<String> openApiEndpoints = List.of(
+                "/api/v1/users/register",
+                "/api/v1/auth/login"
+        );
+
+        // Si le chemin est dans la liste, on laisse passer directement
+        if (openApiEndpoints.contains(path)) {
+            return chain.filter(exchange);
         }
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+        String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+            logger.warn("--- [GATEWAY-DEBUG] Token manquant ou mal formé ---");
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
+
         String token = authHeader.substring(7);
-        io.jsonwebtoken.Claims claims;
+
         try {
-            claims = jwtUtil.getClaims(token);
+            // 1. Validation et extraction des claims
+            var claims = jwtUtils.getClaims(token);
+            String userId = claims.getSubject();
+            // On récupère le rôle (assure-toi que la clé "role" ou "roles" correspond à ton JwtUtils)
+            String userRole = claims.get("roles", String.class);
+
+            // 2. Injection des headers réels
+            ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                    .header("X-User-Id", userId)
+                    .header("X-User-Role", userRole)
+                    .build();
+            logger.info("--- [GATEWAY-DEBUG] Token valide, transfert vers le service ---");
+            return chain.filter(exchange.mutate().request(modifiedRequest).build());
+
         } catch (Exception e) {
-            System.err.println("❌ Erreur validation JWT : " + e.getMessage());
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            return;
+            logger.error("❌ Erreur de validation du token : {}", e.getMessage());
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
         }
-
-        // 4. Ajout des informations dans les Headers via un Wrapper
-        jakarta.servlet.http.HttpServletRequestWrapper wrappedRequest = new jakarta.servlet.http.HttpServletRequestWrapper(request) {
-            @Override
-            public String getHeader(String name) {
-                if ("X-User-Id".equalsIgnoreCase(name)) return claims.getSubject();
-                if ("X-User-Role".equalsIgnoreCase(name)) return claims.get("role", String.class);
-                return super.getHeader(name);
-            }
-        };
-
-        // 5. On passe la requête modifiée vers les microservices
-        filterChain.doFilter(wrappedRequest, response);
     }
 }
+

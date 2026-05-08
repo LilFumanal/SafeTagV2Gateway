@@ -1,16 +1,15 @@
 package com.lil.safetagv2gatewayservice;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.function.RouterFunction;
-import org.springframework.web.servlet.function.ServerResponse;
-import org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions;
-import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
 
-import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
-
+@Slf4j
 @Configuration
 public class GatewayConfig {
 
@@ -23,32 +22,37 @@ public class GatewayConfig {
     @Value("${REVIEW_SERVICE_URL:http://localhost:8082}")
     private String reviewServiceUrl;
 
-    @Value("${MODERATION_SERVICE_URL:http://localhost:8083}")
-    private String moderationServiceUrl;
+    private final AuthenticationFilter authFilter;
 
-    @Bean
-    public RouterFunction<ServerResponse> userServiceRoute() {
-        return GatewayRouterFunctions.route("user-service")
-                .route(path("/api/v1/users/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri(userServiceUrl))
-                .build();
+    private static final Logger log = LoggerFactory.getLogger(GatewayConfig.class);
+
+    public GatewayConfig(AuthenticationFilter authFilter) {
+        this.authFilter = authFilter;
     }
 
     @Bean
-    public RouterFunction<ServerResponse> authServiceRoute() {
-        return GatewayRouterFunctions.route("auth-service")
-                .route(path("/api/v1/auth/login"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri(userServiceUrl)) // Utilise le même service si c'est le cas
+    public RouteLocator routeLocator(RouteLocatorBuilder builder) {
+        log.info("🚀 Configuration des routes Gateway");
+        log.info("RPPS Service URL: {}", rppsServiceUrl);
+        log.info("User Service URL: {}", userServiceUrl);
+
+        return builder.routes()
+                .route("rpps-service", r -> r.path("/api/v1/rpps/**")
+                        .filters(f -> f.filter(authFilter))
+                        .uri(rppsServiceUrl))
+
+                .route("user-service", r -> r.path("/api/v1/users/**")
+                        .filters(f -> f.filter(authFilter))
+                        .uri(userServiceUrl))
+                .route("user-service", r -> r.path("/api/v1/auth/login")
+                        .filters(f -> f.filter(authFilter))
+                        .uri(userServiceUrl))
+
+                .route("review-service", r -> r.path("/api/v1/reviews/**")
+                        .filters(f -> f.filter(authFilter))
+                        .uri(reviewServiceUrl))
+
                 .build();
     }
 
-    @Bean
-    public RouterFunction<ServerResponse> rppsServiceRoute() {
-        return GatewayRouterFunctions.route("rpps-service")
-                .route(path("/api/v1/practitioners/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri(rppsServiceUrl))
-                .build();
-    }
-
-    // ... Fais de même pour les autres services (review et moderation)
 }

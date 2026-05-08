@@ -1,9 +1,9 @@
 package com.lil.safetagv2gatewayservice;
 
 import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.webmvc.error.DefaultErrorAttributes;
+import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.util.Map;
 
@@ -11,10 +11,10 @@ import java.util.Map;
 public class GatewayErrorAttributes extends DefaultErrorAttributes {
 
     @Override
-    public Map<String, Object> getErrorAttributes(WebRequest webRequest, ErrorAttributeOptions options) {
-        Map<String, Object> errorAttributes = super.getErrorAttributes(webRequest, options);
+    public Map<String, Object> getErrorAttributes(ServerRequest request, ErrorAttributeOptions options) {
+        Map<String, Object> errorAttributes = super.getErrorAttributes(request, options);
 
-        // Récupération du statut HTTP généré par la Gateway
+        // Récupération du statut HTTP (souvent mis par la Gateway)
         int status = (int) errorAttributes.getOrDefault("status", 500);
         String path = (String) errorAttributes.getOrDefault("path", "inconnu");
 
