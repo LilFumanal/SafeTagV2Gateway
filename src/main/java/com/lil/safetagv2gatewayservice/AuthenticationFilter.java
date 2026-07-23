@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 
 @Component
 public class AuthenticationFilter implements GatewayFilter {
@@ -25,19 +24,22 @@ public class AuthenticationFilter implements GatewayFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         logger.info("➡️ AuthenticationFilter exécute la requête pour le chemin : {}", exchange.getRequest().getURI().getPath());
+        ServerHttpRequest request = exchange.getRequest();
         String path = exchange.getRequest().getURI().getPath();
+        String method = request.getMethod().name();
 
         // Liste des endpoints publics (sans authentification)
-        List<String> openApiEndpoints = List.of(
-                "/api/v1/users/register",
-                "/api/v1/auth/login"
+        boolean isPublicGet = method.equals("GET") && (
+                path.startsWith("/api/v1/practitioners") ||
+                        (path.startsWith("/api/v1/reviews") && !path.endsWith("/me"))
         );
 
-        // Si le chemin est dans la liste, on laisse passer directement
-        if (openApiEndpoints.contains(path)) {
+        boolean isAuthPath = path.startsWith("/api/v1/auth/");
+        boolean isRegistration = method.equals("POST") && path.equals("/api/v1/users/register");
+
+        if (isPublicGet || isAuthPath || isRegistration) {
             return chain.filter(exchange);
         }
-
         String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             logger.warn("--- [GATEWAY-DEBUG] Token manquant ou mal formé ---");

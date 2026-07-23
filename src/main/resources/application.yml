@@ -1,7 +1,9 @@
 server:
   port: 8085
-
+  max-http-header-size: 256KB
 spring:
+  profiles:
+    active: local
   application:
     name: gateway-service
 
@@ -9,6 +11,3 @@ spring:
 logging:
   level:
     org.springframework.cloud.gateway: TRACE
-jwt:
-  # Clé secrète (doit faire au moins 256 bits). À terme, elle sera dans une variable d'environnement.
-  secret: ${JWT_SECRET:SuperSecretKeyForLocalDevelopmentOnlyThatIsLongEnough}

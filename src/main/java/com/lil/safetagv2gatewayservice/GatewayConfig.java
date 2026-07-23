@@ -13,14 +13,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GatewayConfig {
 
-    @Value("${USER_SERVICE_URL:http://localhost:8084}")
-    private String userServiceUrl;
+    // @Value("${USER_SERVICE_URL:http://localhost:8084}")
+    private String userServiceUrl = "http://localhost:8084";
 
-    @Value("${RPPS_SERVICE_URL:http://localhost:8081}")
-    private String rppsServiceUrl;
+    // @Value("${RPPS_SERVICE_URL:http://localhost:8081}")
+    private String rppsServiceUrl = "http://localhost:8081";
 
-    @Value("${REVIEW_SERVICE_URL:http://localhost:8082}")
-    private String reviewServiceUrl;
+    // @Value("${REVIEW_SERVICE_URL:http://localhost:8082}")
+    private String reviewServiceUrl = "http://localhost:8082";
 
     private final AuthenticationFilter authFilter;
 
@@ -37,6 +37,9 @@ public class GatewayConfig {
         log.info("User Service URL: {}", userServiceUrl);
 
         return builder.routes()
+                .route("health", r -> r.path("/health")
+                        .uri("http://localhost:8085"))
+
                 .route("rpps-service", r -> r.path("/api/v1/rpps/**")
                         .filters(f -> f.filter(authFilter))
                         .uri(rppsServiceUrl))
@@ -44,7 +47,8 @@ public class GatewayConfig {
                 .route("user-service", r -> r.path("/api/v1/users/**")
                         .filters(f -> f.filter(authFilter))
                         .uri(userServiceUrl))
-                .route("user-service", r -> r.path("/api/v1/auth/login")
+
+                .route("user-service-login", r -> r.path("/api/v1/auth/login")
                         .filters(f -> f.filter(authFilter))
                         .uri(userServiceUrl))
 
