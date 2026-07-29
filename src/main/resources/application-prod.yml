@@ -1,2 +1,6 @@
-jwt:
-  secret: ${JWT_SECRET} # Lu directement depuis l'environnement du serveur (longueur 100)
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret-key: ${JWT_SECRET}

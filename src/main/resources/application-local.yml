@@ -1,2 +1,6 @@
-jwt:
-  secret: "Y2hvaXNpc3NleiB1bmUgY2xlIHRyZXMgc2VjdXNpc2VlIDEyMzQ1Njc="
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret-key: "Y2hvaXNpc3NleiB1bmUgY2xlIHRyZXMgc2VjdXNpc2VlIDEyMzQ1Njc="
