@@ -6,6 +6,8 @@ spring:
     active: local
   application:
     name: gateway-service
+  main:
+    allow-bean-definition-overriding: true
 
 # Optionnel : logs pour voir le routage en action
 logging:

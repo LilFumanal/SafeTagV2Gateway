@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 public class AuthHeadersGlobalFilter {
 
     @Bean
-    public GlobalFilter authHeadersGlobalFilter() {
+    public GlobalFilter authHeadersFilter() {
         return (exchange, chain) -> ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .cast(JwtAuthenticationToken.class)
