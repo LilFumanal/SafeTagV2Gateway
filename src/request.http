@@ -1,4 +1,5 @@
 @gateway = http://localhost:8085
+
 ### =========================================
 ### 1. USER SERVICE
 ### =========================================
@@ -21,26 +22,22 @@ Content-Type: application/json
   "password": "password123"
 }
 
-###
-
 ### Récupérer un utilisateur par ID
 GET {{gateway}}/api/v1/users/5e368863-82d7-4e87-a753-dc2c18730be2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjODcyNzgyOC02ZjM4LTRlZmUtODM0Yy0xMzYzZjc0ZTA3MGUiLCJyb2xlcyI6IlVTRVIiLCJlbWFpbCI6InRlc3Q0QHNhZmV0YWcuY29tIiwiaWF0IjoxNzkwMjU5MDY2LCJleHAiOjE3OTAyNjI2NjZ9.PkYWSIwAGjtRab8nk-Ydyo-e0XNDubuNqv2Ee8fV00A
 
 ### =========================================
-### 3. RPPS SERVICE
+### 2. RPPS SERVICE
 ### =========================================
 
-### 3.1 Rechercher des praticiens (Exemple : par nom et ville)
-GET {{gateway}}/api/v1/practitioners/search?name=Dupont&size=10
+### Rechercher des praticiens (par nom et ville)
+GET {{gateway}}/api/v1/rpps/search?name=Dupont&size=10
 
-### 3.2 Rechercher des praticiens (Exemple : par géolocalisation)
-GET {{gateway}}/api/v1/practitioners/search?lat=48.8566&lon=2.3522&radiusKm=10&page=0&size=10
+### Rechercher des praticiens (par géolocalisation)
+GET {{gateway}}/api/v1/rpps/search?lat=48.8566&lon=2.3522&radiusKm=10&page=0&size=10
 
-###
-
-### 3.3 Consulter un praticien par RPPS (et déclencher la MAJ opportuniste)
-GET {{gateway}}/api/v1/practitioners/10000702497
-
+### Consulter un praticien par RPPS
+GET {{gateway}}/api/v1/rpps/10000702497
 
 ### =========================================
 ### 3. REVIEW SERVICE
@@ -49,11 +46,11 @@ GET {{gateway}}/api/v1/practitioners/10000702497
 ### Créer un avis
 POST {{gateway}}/api/v1/reviews
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI2M2E4ZGMwYS01ZGI1LTQ0YTEtYmFhNS00OGY4ODdmZWFhNTUiLCJlbWFpbCI6InRlc3QxQHNhZmV0YWcuZnIiLCJpYXQiOjE3NzczODk3MjgsImV4cCI6MTc3NzQ3NjEyOH0.PBk_BxN52pN7ObYfgHXUSwTR5w6AOVmJWFLRv8Qy6eX3W9Q4IVtGO7ykHZQRgks7RIUTgfWQ29X6NMksGwsRFg
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjODcyNzgyOC02ZjM4LTRlZmUtODM0Yy0xMzYzZjc0ZTA3MGUiLCJyb2xlcyI6IlVTRVIiLCJlbWFpbCI6InRlc3Q0QHNhZmV0YWcuY29tIiwiaWF0IjoxNzkwMjU5MDY2LCJleHAiOjE3OTAyNjI2NjZ9.PkYWSIwAGjtRab8nk-Ydyo-e0XNDubuNqv2Ee8fV00A
+X-User-Id: 63a8dc0a-5db5-44a1-baa5-48f887feaa55
 
 {
   "rppsId": "10000702497",
-  "userId": "63a8dc0a-5db5-44a1-baa5-48f887feaa55",
   "addressIds": ["123e4567-e89b-12d3-a456-426614174001"],
   "comment": "un très bon médecin docteur!",
   "tags": [
@@ -68,13 +65,16 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI2M2E4ZGMwYS01ZGI1LTQ0YTEtY
   ],
   "pathologies": ["ANXIETY"]
 }
-### Créer un avis with bad words
+
+### Créer un avis avec gros mots
 POST {{gateway}}/api/v1/reviews
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjODcyNzgyOC02ZjM4LTRlZmUtODM0Yy0xMzYzZjc0ZTA3MGUiLCJyb2xlcyI6IlVTRVIiLCJlbWFpbCI6InRlc3Q0QHNhZmV0YWcuY29tIiwiaWF0IjoxNzkwMjU5MDY2LCJleHAiOjE3OTAyNjI2NjZ9.PkYWSIwAGjtRab8nk-Ydyo-e0XNDubuNqv2Ee8fV00A
+X-User-Id: 63a8dc0a-5db5-44a1-baa5-48f887feaa55
 
 {
-  "rppsId": "12345678899",
-  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "rppsId": "12345678890",
+  "userId": "c8727828-6f38-4efe-834c-1363f74e070e",
   "addressIds": ["123e4567-e89b-12d3-a456-426614174001"],
   "comment": "bof, un con je vous jure",
   "tags": [
@@ -86,7 +86,5 @@ Content-Type: application/json
       "category": "GENRE",
       "vote": "NEUTRAL"
     }
-  ],
-  "pathologies": ["ANXIETY"]
+  ]
 }
-
